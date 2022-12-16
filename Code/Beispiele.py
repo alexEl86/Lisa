@@ -21,30 +21,40 @@ def np_to_list():
 
 def scaling(data):
     inputs = data[:,1:]
-    gt = data[:,:1]
+    outputs = data[:,:1]
     
-    #Q: why is transforming first and then splitting the dataset better?
+    #Q: why is transforming first and then splitting the dataset better? why not?
     #A: 
     scaler_input = StandardScaler(copy=True, with_mean=True, with_std=True).fit(inputs)
-    scaler_gt = StandardScaler(copy=True, with_mean=True, with_std=True).fit(gt)
+    scaler_outputs = StandardScaler(copy=True, with_mean=True, with_std=True).fit(outputs)
     scaler_all = StandardScaler(copy=True, with_mean=True, with_std=True).fit(data)
-    inputs_scaled = scaler_input.transform(inputs)
-    gt_scaled = scaler_gt.transform(gt)
+    in_scaled = scaler_input.transform(inputs)
+    out_scaled = scaler_outputs.transform(outputs)
     data_scaled = scaler_all.transform(data)
-    print(inputs_scaled)
-    print(data_scaled)
+    #print(in_scaled)
+    #print(data_scaled)
     #Q: transforming all data is the same as transforming inputs and outputs separately?
     #A: 
 
-    inputs_train, inputs_test, gt_train, gt_test = train_test_split(inputs, gt_scaled, test_size=0.2, random_state=0)
+    # linear regression
+    in_train_scaled, in_test_scaled, out_train_scaled, out_test_scaled = train_test_split(in_scaled, out_scaled, test_size=0.2, random_state=0, shuffle = True)
+    _, in_test, _, out_test = train_test_split(inputs, outputs, test_size=0.2, random_state=0, shuffle = True)
     lin_regr = LinearRegression()
-    lin_regr.fit(inputs_train, gt_train)
-    preds_train = lin_regr.predict(inputs_train)
-    preds_test = lin_regr.predict(inputs_test)
-    
-    coef = lin_regr.coef_.tolist()[0]
+    lin_regr.fit(in_train_scaled, out_train_scaled) # -> in scaled / normal space
+
+    # correct prediction and inverse transofrmation
+    preds_test_scaled = lin_regr.predict(in_test_scaled)
+    preds_test_inv = scaler_outputs.inverse_transform(preds_test_scaled)
+    r2_test_scaled = r2_score(out_test_scaled, preds_test_scaled)
+    r2_test = r2_score(out_test, preds_test_inv)
+
+    # alternative / wrong procedure
+    coef = lin_regr.coef_.tolist()
     coef_inv = scaler_input.inverse_transform(coef)
-    preds_test_inv = scaler_output####
+    lin_regr.coef_ = coef_inv
+    preds_test_inv_alt = lin_regr.predict(in_test)
+    preds_test_alt = scaler_outputs.inverse_transform(preds_test_inv_alt)
+    r2_test_alt = r2_score(out_test, preds_test_alt)
 
     pass
 
