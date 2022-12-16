@@ -19,43 +19,37 @@ def np_to_list():
     print()
 
 
-def scaling():
-    df_wine = pd.read_csv(
-        "C:\\Users\\Alex\\Dropbox\\Projekte\\Lisa Master\\Code\\winequality-white.csv", sep=";", header=0)
-    df_wine.head()  # for more information such as mean and std per feature use .describe()
-    df_wine.isnull().sum()
-    X = df_wine.drop(columns='quality')
-    y = df_wine.quality
-    y = y.values
-    y = y.reshape(-1, 1)
+def scaling(data):
+    inputs = data[:,1:]
+    gt = data[:,:1]
+    
+    #Q: why is transforming first and then splitting the dataset better?
+    #A: 
+    scaler_input = StandardScaler(copy=True, with_mean=True, with_std=True).fit(inputs)
+    scaler_gt = StandardScaler(copy=True, with_mean=True, with_std=True).fit(gt)
+    scaler_all = StandardScaler(copy=True, with_mean=True, with_std=True).fit(data)
+    inputs_scaled = scaler_input.transform(inputs)
+    gt_scaled = scaler_gt.transform(gt)
+    data_scaled = scaler_all.transform(data)
+    print(inputs_scaled)
+    print(data_scaled)
+    #Q: transforming all data is the same as transforming inputs and outputs separately?
+    #A: 
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
-
-    scaler_features = StandardScaler(copy=True, with_mean=True, with_std=True).fit(X_train)
-    scaler_targets = StandardScaler(copy=True, with_mean=True, with_std=True).fit(y_train)
-    # sidenote: it is important that we use the same scaling on both, training and test data.
-    # use the scaler derived form the training set (as in reality you would have no access to test data yet)
-    # Transform the data
-    X_train = scaler_features.transform(X_train)
-    y_train = scaler_targets.transform(y_train)
-    X_test = scaler_features.transform(X_test)
-    y_test = scaler_targets.transform(y_test)
-    #############################################################################
-    # From here on we perform the usual steps
-    # Instantiate Regressor
+    inputs_train, inputs_test, gt_train, gt_test = train_test_split(inputs, gt_scaled, test_size=0.2, random_state=0)
     lin_regr = LinearRegression()
-    # Fitting the Regression
-    lin_regr.fit(X_train, y_train)
-    # Test regressor with test data (and training data to compare them)
-    y_pred_test = lin_regr.predict(X_test)
-    y_pred_train = lin_regr.predict(X_train)
-    # Calc metric (e.g. r2)
-    r2_test = r2_score(y_test, y_pred_test)
-    r2_train = r2_score(y_train, y_pred_train)
-    # Get coefficients
+    lin_regr.fit(inputs_train, gt_train)
+    preds_train = lin_regr.predict(inputs_train)
+    preds_test = lin_regr.predict(inputs_test)
+    
     coef = lin_regr.coef_.tolist()[0]
+    coef_inv = scaler_input.inverse_transform(coef)
+    preds_test_inv = scaler_output####
+
+    pass
 
 
 if __name__ == '__main__':
     # np_to_list()
-    scaling()
+    data = np.array([[1,2,3],[20,30,40],[3,4,5],[40,50,60],[5,6,7],[60,70,80]])
+    scaling(data)
